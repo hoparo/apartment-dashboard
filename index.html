@@ -78,40 +78,6 @@
     <!-- Main Dashboard (Hidden initially) -->
     <main id="dashboard" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 hidden">
         
-        <!-- Filter Section -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col sm:flex-row flex-wrap gap-4 items-end">
-            <div class="w-full sm:w-auto flex-1 min-w-[120px]">
-                <label for="filterDate" class="block text-xs font-medium text-gray-500 mb-1">거래일자</label>
-                <select id="filterDate" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
-                    <option value="">전체</option>
-                </select>
-            </div>
-            <div class="w-full sm:w-auto flex-1 min-w-[120px]">
-                <label for="filterApt" class="block text-xs font-medium text-gray-500 mb-1">아파트명</label>
-                <select id="filterApt" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
-                    <option value="">전체</option>
-                </select>
-            </div>
-            <div class="w-full sm:w-auto flex-1 min-w-[120px]">
-                <label for="filterDong" class="block text-xs font-medium text-gray-500 mb-1">법정동</label>
-                <select id="filterDong" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
-                    <option value="">전체</option>
-                </select>
-            </div>
-            <div class="w-full sm:w-auto flex-1 min-w-[120px]">
-                <label for="filterArea" class="block text-xs font-medium text-gray-500 mb-1">전용면적(㎡)</label>
-                <select id="filterArea" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
-                    <option value="">전체</option>
-                </select>
-            </div>
-            <div class="w-full sm:w-auto mt-2 sm:mt-0">
-                <button id="resetFilters" class="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    초기화
-                </button>
-            </div>
-        </div>
-
         <!-- Summary Cards: 모바일(1칸), 태블릿(2칸), PC(4칸) 자동 조절 -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <!-- Card 1: Total Count -->
@@ -171,12 +137,45 @@
             </div>
         </div>
 
-        <!-- Table Section -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h2 class="text-base sm:text-lg font-bold text-gray-800">최근 거래 목록</h2>
-                <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-md">최신순 정렬</span>
+        <!-- Table Section with Integrated Filters -->
+        <div id="tableSection" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 bg-gray-50">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-base sm:text-lg font-bold text-gray-800">최근 거래 목록</h2>
+                    <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-md">최신순 정렬</span>
+                </div>
+                
+                <!-- Filter Section (Moved here) -->
+                <div class="flex flex-col sm:flex-row flex-wrap gap-3">
+                    <div class="w-full sm:w-auto flex-1 min-w-[120px]">
+                        <select id="filterDate" class="w-full bg-white border border-gray-200 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm shadow-sm cursor-pointer hover:border-green-400 transition-colors">
+                            <option value="">거래일자 (전체)</option>
+                        </select>
+                    </div>
+                    <div class="w-full sm:w-auto flex-1 min-w-[120px]">
+                        <select id="filterApt" class="w-full bg-white border border-gray-200 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm shadow-sm cursor-pointer hover:border-green-400 transition-colors">
+                            <option value="">아파트명 (전체)</option>
+                        </select>
+                    </div>
+                    <div class="w-full sm:w-auto flex-1 min-w-[120px]">
+                        <select id="filterDong" class="w-full bg-white border border-gray-200 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm shadow-sm cursor-pointer hover:border-green-400 transition-colors">
+                            <option value="">법정동 (전체)</option>
+                        </select>
+                    </div>
+                    <div class="w-full sm:w-auto flex-1 min-w-[120px]">
+                        <select id="filterArea" class="w-full bg-white border border-gray-200 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm shadow-sm cursor-pointer hover:border-green-400 transition-colors">
+                            <option value="">전용면적 (전체)</option>
+                        </select>
+                    </div>
+                    <div class="w-full sm:w-auto">
+                        <button id="resetFilters" class="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1 shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            초기화
+                        </button>
+                    </div>
+                </div>
             </div>
+            
             <!-- overflow-x-auto를 통해 모바일에서 표가 깨지지 않고 좌우 스크롤 되도록 유지 -->
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -355,24 +354,24 @@
             const dates = getUnique('date').sort().reverse(); // 최신순
             const apts = getUnique('aptName').sort(); // 가나다순
             const dongs = getUnique('dong').sort(); // 가나다순
-            // 전용면적은 구간별로 하드코딩하므로 동적 추출 제외
 
-            const fillSelect = (id, options) => {
+            // 옵션을 채워넣는 헬퍼 함수 (라벨 생략을 위해 기본 텍스트 전달)
+            const fillSelect = (id, options, defaultText) => {
                 const select = document.getElementById(id);
-                select.innerHTML = '<option value="">전체</option>';
+                select.innerHTML = `<option value="">${defaultText}</option>`;
                 options.forEach(opt => {
                     select.innerHTML += `<option value="${opt}">${opt}</option>`;
                 });
             };
 
-            fillSelect('filterDate', dates);
-            fillSelect('filterApt', apts);
-            fillSelect('filterDong', dongs);
+            fillSelect('filterDate', dates, '거래일자 (전체)');
+            fillSelect('filterApt', apts, '아파트명 (전체)');
+            fillSelect('filterDong', dongs, '법정동 (전체)');
             
             // 전용면적 드롭다운 구간별 세팅
             const areaSelect = document.getElementById('filterArea');
             areaSelect.innerHTML = `
-                <option value="">전체</option>
+                <option value="">전용면적 (전체)</option>
                 <option value="under30">30 미만</option>
                 <option value="30to50">30 이상 ~ 50 미만</option>
                 <option value="over50">50 이상</option>
