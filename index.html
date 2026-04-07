@@ -28,10 +28,20 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* 스크롤바 커스텀 */
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+        /* 최고가 강조 번개 애니메이션 */
+        @keyframes flash-lightning {
+            0%, 100% { opacity: 1; transform: scale(1) rotate(15deg); color: #fbbf24; text-shadow: 0 0 5px rgba(251, 191, 36, 0.4); }
+            50% { opacity: 0.8; transform: scale(1.3) rotate(15deg); color: #f59e0b; text-shadow: 0 0 12px rgba(245, 158, 11, 0.8); }
+        }
+        .animate-lightning {
+            display: inline-block;
+            animation: flash-lightning 1.2s ease-in-out infinite;
+        }
+        
+        /* 스크롤바 커스텀 (모바일 터치 환경 고려) */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
     </style>
 </head>
@@ -39,99 +49,146 @@
 
     <!-- Header -->
     <header class="bg-white shadow-sm sticky top-0 z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                우리 동네 아파트 실거래가 대시보드
-            </h1>
-            <span class="text-sm text-gray-500 font-medium" id="lastUpdated">데이터 불러오는 중...</span>
+        <!-- 모바일에서는 세로 배치(flex-col), 태블릿 이상에서는 가로 배치(sm:flex-row) -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                <!-- 국토교통부 공식 로고 (공공데이터 시각화 신뢰도 향상) -->
+                <img src="https://upload.wikimedia.org/wikipedia/commons/d/d5/Ministry_of_Land%2C_Infrastructure_and_Transport_%28South_Korea%29_logo.svg" 
+                     alt="국토교통부 로고" 
+                     class="h-7 sm:h-9 object-contain self-start sm:self-auto" 
+                     onerror="this.style.display='none';">
+                
+                <!-- PC 화면용 시각적 구분선 -->
+                <div class="h-5 w-px bg-gray-300 hidden sm:block"></div>
+                
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <span class="truncate">우리 동네 아파트 실거래가 대시보드</span>
+                </h1>
+            </div>
+            <span class="text-xs sm:text-sm text-gray-500 font-medium whitespace-nowrap" id="lastUpdated">데이터 불러오는 중...</span>
         </div>
     </header>
 
     <!-- Loading State -->
-    <div id="loading" class="flex flex-col items-center justify-center h-64 mt-10">
+    <div id="loading" class="flex flex-col items-center justify-center h-64 mt-10 px-4 text-center">
         <div class="spinner mb-4"></div>
-        <p class="text-gray-500 font-medium">구글 시트에서 데이터를 안전하게 가져오고 있습니다...</p>
+        <p class="text-gray-500 font-medium text-sm sm:text-base">구글 시트에서 데이터를 안전하게 가져오고 있습니다...</p>
     </div>
 
     <!-- Main Dashboard (Hidden initially) -->
-    <main id="dashboard" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 hidden">
+    <main id="dashboard" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 hidden">
         
-        <!-- Summary Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Filter Section -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-6 sm:mb-8 flex flex-col sm:flex-row flex-wrap gap-4 items-end">
+            <div class="w-full sm:w-auto flex-1 min-w-[120px]">
+                <label for="filterDate" class="block text-xs font-medium text-gray-500 mb-1">거래일자</label>
+                <select id="filterDate" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                    <option value="">전체</option>
+                </select>
+            </div>
+            <div class="w-full sm:w-auto flex-1 min-w-[120px]">
+                <label for="filterApt" class="block text-xs font-medium text-gray-500 mb-1">아파트명</label>
+                <select id="filterApt" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                    <option value="">전체</option>
+                </select>
+            </div>
+            <div class="w-full sm:w-auto flex-1 min-w-[120px]">
+                <label for="filterDong" class="block text-xs font-medium text-gray-500 mb-1">법정동</label>
+                <select id="filterDong" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                    <option value="">전체</option>
+                </select>
+            </div>
+            <div class="w-full sm:w-auto flex-1 min-w-[120px]">
+                <label for="filterArea" class="block text-xs font-medium text-gray-500 mb-1">전용면적(㎡)</label>
+                <select id="filterArea" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-2 px-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm">
+                    <option value="">전체</option>
+                </select>
+            </div>
+            <div class="w-full sm:w-auto mt-2 sm:mt-0">
+                <button id="resetFilters" class="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    초기화
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Cards: 모바일(1칸), 태블릿(2칸), PC(4칸) 자동 조절 -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <!-- Card 1: Total Count -->
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center">
-                <div class="p-3 rounded-full bg-green-50 text-green-600 mr-4">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <div class="bg-white rounded-xl shadow-sm p-5 sm:p-6 border border-gray-100 flex items-center">
+                <div class="p-3 rounded-full bg-green-50 text-green-600 mr-4 flex-shrink-0">
+                    <svg class="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">전체 거래 건수</p>
-                    <p class="text-2xl font-bold text-green-700" id="totalCount">-</p>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500 mb-1">전체 거래 건수</p>
+                    <p class="text-xl sm:text-2xl font-bold text-green-700" id="totalCount">-</p>
                 </div>
             </div>
 
             <!-- Card 2: Average Price -->
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center">
-                <div class="p-3 rounded-full bg-emerald-50 text-emerald-600 mr-4">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div class="bg-white rounded-xl shadow-sm p-5 sm:p-6 border border-gray-100 flex items-center">
+                <div class="p-3 rounded-full bg-emerald-50 text-emerald-600 mr-4 flex-shrink-0">
+                    <svg class="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">평균 거래가격</p>
-                    <p class="text-2xl font-bold text-green-700" id="avgPrice">-</p>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500 mb-1">평균 거래가격</p>
+                    <p class="text-xl sm:text-2xl font-bold text-green-700" id="avgPrice">-</p>
                 </div>
             </div>
 
             <!-- Card 3: Max Price -->
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center">
-                <div class="p-3 rounded-full bg-red-50 text-red-600 mr-4">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+            <div class="bg-white rounded-xl shadow-sm p-5 sm:p-6 border border-gray-100 flex items-center">
+                <div class="p-3 rounded-full bg-red-50 text-red-600 mr-4 flex-shrink-0">
+                    <svg class="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">최고 거래가격</p>
-                    <p class="text-2xl font-bold text-red-600" id="maxPrice">-</p>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500 mb-1">최고 거래가격</p>
+                    <p class="text-xl sm:text-2xl font-bold text-red-600" id="maxPrice">-</p>
                 </div>
             </div>
 
             <!-- Card 4: Min Price -->
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center">
-                <div class="p-3 rounded-full bg-blue-50 text-blue-600 mr-4">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
+            <div class="bg-white rounded-xl shadow-sm p-5 sm:p-6 border border-gray-100 flex items-center">
+                <div class="p-3 rounded-full bg-blue-50 text-blue-600 mr-4 flex-shrink-0">
+                    <svg class="w-7 h-7 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-gray-500 mb-1">최저 거래가격</p>
-                    <p class="text-2xl font-bold text-blue-600" id="minPrice">-</p>
+                    <p class="text-xs sm:text-sm font-medium text-gray-500 mb-1">최저 거래가격</p>
+                    <p class="text-xl sm:text-2xl font-bold text-blue-600" id="minPrice">-</p>
                 </div>
             </div>
         </div>
 
         <!-- Chart Section -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-            <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-6 sm:mb-8">
+            <h2 class="text-base sm:text-lg font-bold text-gray-800 mb-4 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-gray-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
                 월별 평균 거래가격 추이
             </h2>
-            <div class="relative h-72 w-full">
+            <!-- 모바일에서는 차트 높이를 약간 줄여서 스크롤 편의성 제공 -->
+            <div class="relative h-56 sm:h-72 w-full">
                 <canvas id="priceChart"></canvas>
             </div>
         </div>
 
         <!-- Table Section -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h2 class="text-lg font-bold text-gray-800">최근 거래 목록</h2>
+            <div class="px-4 sm:px-6 py-4 sm:py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h2 class="text-base sm:text-lg font-bold text-gray-800">최근 거래 목록</h2>
                 <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded-md">최신순 정렬</span>
             </div>
+            <!-- overflow-x-auto를 통해 모바일에서 표가 깨지지 않고 좌우 스크롤 되도록 유지 -->
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">거래일자</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">아파트명</th>
-                            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">법정동</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">전용면적(㎡)</th>
-                            <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">층</th>
-                            <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-green-600 uppercase tracking-wider">거래금액(억원)</th>
-                            <th scope="col" class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">건축년도</th>
+                            <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">거래일자</th>
+                            <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">아파트명</th>
+                            <th scope="col" class="px-4 sm:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">법정동</th>
+                            <th scope="col" class="px-4 sm:px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">전용면적(㎡)</th>
+                            <th scope="col" class="px-4 sm:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">층</th>
+                            <th scope="col" class="px-4 sm:px-6 py-3 text-right text-xs font-semibold text-green-600 uppercase tracking-wider whitespace-nowrap">거래금액(억원)</th>
+                            <th scope="col" class="px-4 sm:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">건축년도</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
@@ -145,6 +202,9 @@
     <script>
         // 구글 시트 CSV URL
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQu5D_dJ_I3d6MbHbz1vL8rwat4gtv7_LSPsmIOuZp4VSjoNujb2uKEGj-THUW8Sm_eCVw14k-fQDwt/pub?gid=949555219&single=true&output=csv';
+
+        // 전체 원본 데이터를 보관할 변수 (필터링용)
+        let allAptData = [];
 
         // 시스템 초기화
         document.addEventListener('DOMContentLoaded', () => {
@@ -223,9 +283,35 @@
                 return;
             }
 
+            // 원본 데이터 저장 및 필터 UI 세팅
+            allAptData = cleanedData;
+            populateFilters(allAptData);
+
+            // 초기 대시보드 렌더링
+            updateDashboard(allAptData);
+
+            // 로딩 숨기고 대시보드 표시
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('fade-in');
+        }
+
+        // 대시보드 지표 및 차트, 테이블 업데이트 로직 분리
+        function updateDashboard(filteredData) {
+            // 필터 결과가 없을 경우 예외 처리
+            if (filteredData.length === 0) {
+                document.getElementById('totalCount').innerText = '0건';
+                document.getElementById('avgPrice').innerText = '0억';
+                document.getElementById('maxPrice').innerText = '0억';
+                document.getElementById('minPrice').innerText = '0억';
+                renderChart([], []);
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500 font-medium">선택하신 조건에 맞는 거래 내역이 없습니다.</td></tr>';
+                return;
+            }
+
             // 2. 요약 지표 계산
-            const totalCount = cleanedData.length;
-            const prices = cleanedData.map(d => d.price);
+            const totalCount = filteredData.length;
+            const prices = filteredData.map(d => d.price);
             const maxPrice = Math.max(...prices);
             const minPrice = Math.min(...prices);
             const avgPrice = Math.round(prices.reduce((a, b) => a + b, 0) / totalCount);
@@ -240,7 +326,7 @@
 
             // 3. 차트용 데이터 집계 (월별 평균)
             const monthlyData = {};
-            cleanedData.forEach(row => {
+            filteredData.forEach(row => {
                 if (row.monthKey !== 'Unknown') {
                     if (!monthlyData[row.monthKey]) {
                         monthlyData[row.monthKey] = { sum: 0, count: 0 };
@@ -258,13 +344,78 @@
             renderChart(chartLabels, chartData);
 
             // 4. 테이블 렌더링 (최신 날짜순 정렬)
-            const sortedTableData = [...cleanedData].sort((a, b) => (a.date < b.date ? 1 : -1));
-            renderTable(sortedTableData);
+            const sortedTableData = [...filteredData].sort((a, b) => (a.date < b.date ? 1 : -1));
+            renderTable(sortedTableData, maxPrice);
+        }
 
-            // 5. 로딩 숨기고 대시보드 표시
-            document.getElementById('loading').classList.add('hidden');
-            document.getElementById('dashboard').classList.remove('hidden');
-            document.getElementById('dashboard').classList.add('fade-in');
+        // 필터 드롭다운 옵션 채우기 및 이벤트 연결
+        function populateFilters(data) {
+            const getUnique = (key) => [...new Set(data.map(item => item[key]))];
+
+            const dates = getUnique('date').sort().reverse(); // 최신순
+            const apts = getUnique('aptName').sort(); // 가나다순
+            const dongs = getUnique('dong').sort(); // 가나다순
+            // 전용면적은 구간별로 하드코딩하므로 동적 추출 제외
+
+            const fillSelect = (id, options) => {
+                const select = document.getElementById(id);
+                select.innerHTML = '<option value="">전체</option>';
+                options.forEach(opt => {
+                    select.innerHTML += `<option value="${opt}">${opt}</option>`;
+                });
+            };
+
+            fillSelect('filterDate', dates);
+            fillSelect('filterApt', apts);
+            fillSelect('filterDong', dongs);
+            
+            // 전용면적 드롭다운 구간별 세팅
+            const areaSelect = document.getElementById('filterArea');
+            areaSelect.innerHTML = `
+                <option value="">전체</option>
+                <option value="under30">30 미만</option>
+                <option value="30to50">30 이상 ~ 50 미만</option>
+                <option value="over50">50 이상</option>
+            `;
+
+            // 이벤트 리스너 등록
+            ['filterDate', 'filterApt', 'filterDong', 'filterArea'].forEach(id => {
+                document.getElementById(id).addEventListener('change', applyFilters);
+            });
+
+            // 초기화 버튼
+            document.getElementById('resetFilters').addEventListener('click', () => {
+                ['filterDate', 'filterApt', 'filterDong', 'filterArea'].forEach(id => {
+                    document.getElementById(id).value = '';
+                });
+                updateDashboard(allAptData);
+            });
+        }
+
+        // 선택된 필터값 적용하여 데이터 좁히기
+        function applyFilters() {
+            const fDate = document.getElementById('filterDate').value;
+            const fApt = document.getElementById('filterApt').value;
+            const fDong = document.getElementById('filterDong').value;
+            const fArea = document.getElementById('filterArea').value;
+
+            const filtered = allAptData.filter(row => {
+                // 면적 구간 필터링 로직
+                let areaMatch = true;
+                if (fArea) {
+                    const areaNum = parseFloat(row.area);
+                    if (fArea === 'under30') areaMatch = areaNum < 30;
+                    else if (fArea === '30to50') areaMatch = (areaNum >= 30 && areaNum < 50);
+                    else if (fArea === 'over50') areaMatch = areaNum >= 50;
+                }
+
+                return (!fDate || row.date === fDate) &&
+                       (!fApt || row.aptName === fApt) &&
+                       (!fDong || row.dong === fDong) &&
+                       areaMatch;
+            });
+
+            updateDashboard(filtered);
         }
 
         // 차트 렌더링 함수
@@ -277,6 +428,9 @@
                 priceChartInstance.destroy();
             }
 
+            // 모바일 폰트를 위해 화면 크기 체크
+            const isMobile = window.innerWidth < 640;
+
             priceChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -288,8 +442,8 @@
                         backgroundColor: 'rgba(22, 163, 74, 0.1)',
                         pointBackgroundColor: '#ffffff',
                         pointBorderColor: '#16a34a',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
+                        pointBorderWidth: isMobile ? 1 : 2,
+                        pointRadius: isMobile ? 3 : 4,
                         borderWidth: 2,
                         fill: true,
                         tension: 0.3 // 부드러운 곡선
@@ -306,9 +460,9 @@
                         legend: { display: false },
                         tooltip: {
                             backgroundColor: 'rgba(17, 24, 39, 0.9)',
-                            titleFont: { family: "'Noto Sans KR', sans-serif", size: 13 },
-                            bodyFont: { family: "'Noto Sans KR', sans-serif", size: 14, weight: 'bold' },
-                            padding: 12,
+                            titleFont: { family: "'Noto Sans KR', sans-serif", size: isMobile ? 11 : 13 },
+                            bodyFont: { family: "'Noto Sans KR', sans-serif", size: isMobile ? 12 : 14, weight: 'bold' },
+                            padding: isMobile ? 8 : 12,
                             callbacks: {
                                 label: function(context) {
                                     return parseFloat((context.parsed.y / 10000).toFixed(2)) + '억원';
@@ -317,11 +471,15 @@
                         }
                     },
                     scales: {
-                        x: { grid: { display: false, drawBorder: false } },
+                        x: { 
+                            grid: { display: false, drawBorder: false },
+                            ticks: { font: { size: isMobile ? 10 : 12 } }
+                        },
                         y: {
                             beginAtZero: false,
                             grid: { borderDash: [4, 4], color: '#e5e7eb', drawBorder: false },
                             ticks: {
+                                font: { size: isMobile ? 10 : 12 },
                                 callback: function(value) {
                                     return parseFloat((value / 10000).toFixed(2)) + '억';
                                 }
@@ -333,7 +491,7 @@
         }
 
         // 테이블 렌더링 함수
-        function renderTable(data) {
+        function renderTable(data, maxPrice) {
             const tbody = document.getElementById('tableBody');
             let html = '';
             
@@ -341,15 +499,23 @@
                 // 테이블 데이터도 억원 단위로 보기 좋게 소수점 처리
                 const ukPrice = parseFloat((row.price / 10000).toFixed(2));
                 
+                // 최고가 여부 확인 및 번개 아이콘 생성
+                const isMax = (row.price === maxPrice);
+                const lightningHtml = isMax ? `<span class="animate-lightning ml-1 text-base">⚡</span>` : '';
+                
+                // 최고가 행은 시각적으로 더 잘 띄게 배경색과 글자색 조정
+                const rowBg = isMax ? 'bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-green-50/50';
+                const priceColor = isMax ? 'text-red-600 font-extrabold' : 'text-green-600 font-bold';
+                
                 html += `
-                    <tr class="hover:bg-green-50/50 transition-colors">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">${row.date}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">${row.aptName}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${row.dong}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-600">${row.area}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">${row.floor}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-green-600">${ukPrice}억</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-400">${row.yearBuilt}</td>
+                    <tr class="${rowBg} transition-colors">
+                        <td class="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-600">${row.date}</td>
+                        <td class="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-bold text-gray-900">${row.aptName}${lightningHtml}</td>
+                        <td class="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500">${row.dong}</td>
+                        <td class="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-right text-gray-600">${row.area}</td>
+                        <td class="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-center text-gray-500">${row.floor}</td>
+                        <td class="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-right ${priceColor}">${ukPrice}억${lightningHtml}</td>
+                        <td class="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-center text-gray-400">${row.yearBuilt}</td>
                     </tr>
                 `;
             });
